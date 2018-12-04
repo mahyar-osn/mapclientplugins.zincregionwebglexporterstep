@@ -6,22 +6,26 @@ from opencmiss.zinc.streamregion import StreaminformationRegion
 
 def _read_region_description(region, region_description):
     stream_information = region.createStreaminformationRegion()
-    memory_resource = stream_information.createStreamresourceMemoryBuffer(region_description['elements'])
+    memory_resource = stream_information.createStreamresourceMemoryBuffer(region_description['elements'].encode('utf-8'))
     stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_MESH3D)
 
     for key in region_description:
         if key != 'elements':
-            memory_resource = stream_information.createStreamresourceMemoryBuffer(region_description[key])
+            if isinstance(key, float):
+                time = key
+            else:
+                time = float(key)
+            memory_resource = stream_information.createStreamresourceMemoryBuffer(region_description[key].encode('utf-8'))
             stream_information.setResourceDomainTypes(memory_resource, Field.DOMAIN_TYPE_NODES)
             stream_information.setResourceAttributeReal(memory_resource, StreaminformationRegion.ATTRIBUTE_TIME,
-                                                        key)
+                                                        time)
     region.read(stream_information)
 
 
 def _read_scene_description(scene, scene_description):
     stream_information = scene.createStreaminformationScene()
     stream_information.setIOFormat(stream_information.IO_FORMAT_DESCRIPTION)
-    stream_information.createStreamresourceMemoryBuffer(scene_description)
+    stream_information.createStreamresourceMemoryBuffer(scene_description.encode('utf-8'))
     scene.read(stream_information)
 
 
@@ -35,18 +39,25 @@ def export_to_web_gl_json(mesh_description):
     """
     context = Context('web_gl')
 
-    region_description = mesh_description.get_region_description()
-    scene_description = mesh_description.get_scene_description()
+    if isinstance(mesh_description, dict):
+        region_description = mesh_description['_region_description']
+        scene_description = mesh_description['_scene_description']
+        time_array = mesh_description['_epochs']
+        start_time = time_array[0]
+        end_time = time_array[-1]
+        epoch_count = len(time_array)
+    else:
+        region_description = mesh_description.get_region_description()
+        scene_description = mesh_description.get_scene_description()
+        start_time = mesh_description.get_start_time()
+        end_time = mesh_description.get_end_time()
+        epoch_count = mesh_description.get_epoch_count()
 
     region = context.createRegion()
     scene = region.getScene()
 
     _read_region_description(region, region_description)
     _read_scene_description(scene, scene_description)
-
-    start_time = mesh_description.get_start_time()
-    end_time = mesh_description.get_end_time()
-    epoch_count = mesh_description.get_epoch_count()
 
     stream_information = scene.createStreaminformationScene()
     stream_information.setIOFormat(stream_information.IO_FORMAT_THREEJS)
@@ -65,6 +76,6 @@ def export_to_web_gl_json(mesh_description):
     scene.write(stream_information)
 
     # Store all the resources in a buffer
-    buffer = [resources[i].getBuffer()[1] for i in range(number)]
+    resource_buffer = [resources[i].getBuffer()[1] for i in range(number)]
 
-    return buffer
+    return resource_buffer

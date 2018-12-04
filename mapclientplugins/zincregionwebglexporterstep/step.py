@@ -71,7 +71,7 @@ class ZincRegionWebGlExporterStep(WorkflowStepMountPoint):
         then set:
             self._configured = True
         """
-        dlg = ConfigureDialog(self._main_window)
+        dlg = ConfigureDialog()
         dlg.identifierOccursCount = self._identifierOccursCount
         dlg.setConfig(self._config)
         dlg.validate()
