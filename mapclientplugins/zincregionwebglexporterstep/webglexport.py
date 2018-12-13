@@ -59,6 +59,11 @@ def export_to_web_gl_json(mesh_description):
     _read_region_description(region, region_description)
     _read_scene_description(scene, scene_description)
 
+    tessellation_module = scene.getTessellationmodule()
+    default_tessellation = tessellation_module.getDefaultTessellation()
+    default_tessellation.setRefinementFactors([4, 4, 1])
+    tessellation_module.setDefaultTessellation(default_tessellation)
+
     stream_information = scene.createStreaminformationScene()
     stream_information.setIOFormat(stream_information.IO_FORMAT_THREEJS)
     stream_information.setInitialTime(start_time)
